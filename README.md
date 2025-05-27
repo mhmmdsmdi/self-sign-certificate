@@ -99,6 +99,67 @@ The script creates the following directory structure:
 FORCE_NEW_CA=true ./generate-certificate.sh
 ```
 
+To add usage instructions for **NGINX** and **ASP.NET Core** with the generated SSL certificates, you can append the following section to your `README.md`:
+
+---
+
+## Usage with NGINX and ASP.NET Core
+
+### Using Certificates with NGINX
+
+To configure NGINX with a generated certificate:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    ssl_certificate     /path/to/certificates/[certificate-name]/[name].crt;
+    ssl_certificate_key /path/to/certificates/[certificate-name]/[name]_no_pass.key;
+
+    location / {
+        proxy_pass         http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection keep-alive;
+        proxy_set_header   Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Make sure to replace `[certificate-name]` and `[name]` with the actual values you used during generation.
+
+### Using Certificates in ASP.NET Core (Kestrel)
+
+In your `appsettings.json` or program configuration:
+
+```json
+"Kestrel": {
+  "Endpoints": {
+    "Https": {
+      "Url": "https://0.0.0.0:5001",
+      "Certificate": {
+        "Path": "certificates/[certificate-name]/[name].pfx",
+        "Password": "YourPfxPassword"
+      }
+    }
+  }
+}
+```
+
+Or in `Program.cs`:
+
+```csharp
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5001, listenOptions =>
+    {
+        listenOptions.UseHttps("certificates/[certificate-name]/[name].pfx", "YourPfxPassword");
+    });
+});
+```
+
 ### Batch Mode (Non-Interactive)
 
 You can modify the script to run in batch mode by pre-setting variables or removing interactive prompts.
